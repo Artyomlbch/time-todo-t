@@ -3,6 +3,7 @@ package com.example.timeapp
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -10,22 +11,18 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.timeapp.model.TaskModel
+import com.example.timeapp.db.SQLiteManager
 import com.example.timeapp.viewadapter.TaskViewAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var tasks: ArrayList<TaskModel>
-    private lateinit var addTaskButton: FloatingActionButton
-    var titles: ArrayList<String> = ArrayList()
-    var boxChecks: ArrayList<Boolean> = ArrayList()
+    private lateinit var db: SQLiteManager
+    private lateinit var taskViewAdapter: TaskViewAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +34,8 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        addTaskButton = findViewById(R.id.fabAddTask)
-        addTaskButton.setOnClickListener {v ->
+        val addTaskButton: FloatingActionButton = findViewById(R.id.fabAddTask)
+        addTaskButton.setOnClickListener { _ ->
             val bottomSheetDialog: BottomSheetDialog = BottomSheetDialog(this@MainActivity)
             val view: View = LayoutInflater.from(this@MainActivity).inflate(R.layout.bottom_sheet_add_task, null)
 
@@ -47,35 +44,36 @@ class MainActivity : AppCompatActivity() {
 
             val textInputLayout: TextInputLayout = view.findViewById(R.id.tilTaskFieldLayout)
             val editText: TextInputEditText = view.findViewById(R.id.tiAddTaskEditText)
+            val saveButton: Button = view.findViewById(R.id.btnSaveTask)
 
-            bottomSheetDialog.setOnDismissListener {
-                Toast.makeText(this@MainActivity, "Bottom sheet dismissed", Toast.LENGTH_SHORT).show()
+            saveButton.setOnClickListener {
+                val taskTitle = editText.text.toString()
+                if (taskTitle.isEmpty() || taskTitle.isBlank()) {
+                    textInputLayout.error = "Type a correct task"
+                } else {
+                    db.addTask(taskTitle.trim())
+                    taskViewAdapter.refreshData(db.getAllTasks())
+                    Toast.makeText(this, "Task added", Toast.LENGTH_SHORT).show()
+                    bottomSheetDialog.dismiss()
+                }
             }
         }
 
-        fillArrays()
+        db = SQLiteManager(this@MainActivity)
+        taskViewAdapter = TaskViewAdapter(db.getAllTasks()) { task ->
+            db.updateIsChecked(task)
+        }
+
         recyclerView = findViewById(R.id.rvTasks)
         recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
+        recyclerView.adapter = taskViewAdapter
         recyclerView.setHasFixedSize(true)
 
-        tasks = arrayListOf<TaskModel>()
-        getData()
-
     }
 
-    private fun fillArrays() {
-        for (i in 1..15) {
-            titles.add("Task $i")
-            boxChecks.add(false)
-        }
+    override fun onResume() {
+        super.onResume()
+        taskViewAdapter.refreshData(db.getAllTasks())
     }
 
-    private fun getData() {
-        for (i in titles.indices) {
-            val task: TaskModel = TaskModel(titles[i], boxChecks[i])
-            tasks.add(task)
-        }
-
-        recyclerView.adapter = TaskViewAdapter(tasks)
-    }
 }

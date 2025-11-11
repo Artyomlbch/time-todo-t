@@ -7,9 +7,12 @@ import android.widget.CheckBox
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.timeapp.R
+import com.example.timeapp.db.SQLiteManager
 import com.example.timeapp.model.TaskModel
 
-class TaskViewAdapter(private val tasks: ArrayList<TaskModel>): RecyclerView.Adapter<TaskViewAdapter.TaskViewHolder>() {
+class TaskViewAdapter(
+    private var tasks: List<TaskModel>,
+    private val onStatusChanged: (TaskModel) -> Unit): RecyclerView.Adapter<TaskViewAdapter.TaskViewHolder>() {
 
 
     override fun onCreateViewHolder(
@@ -26,9 +29,16 @@ class TaskViewAdapter(private val tasks: ArrayList<TaskModel>): RecyclerView.Ada
         holder: TaskViewHolder,
         position: Int
     ) {
-        val currentItem: TaskModel = tasks[position]
-        holder.task.text = currentItem.title
-        holder.taskCheckBox.isChecked = currentItem.isChecked
+        holder.taskCheckBox.setOnCheckedChangeListener(null)
+
+        val currentTask: TaskModel = tasks[position]
+        holder.task.text = currentTask.title
+        holder.taskCheckBox.isChecked = currentTask.isChecked
+
+        holder.taskCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            currentTask.isChecked = isChecked
+            onStatusChanged(currentTask)
+        }
     }
 
     override fun getItemCount(): Int {
@@ -38,5 +48,10 @@ class TaskViewAdapter(private val tasks: ArrayList<TaskModel>): RecyclerView.Ada
     class TaskViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
         val task: TextView = itemView.findViewById(R.id.tvTaskTitle)
         val taskCheckBox: CheckBox = itemView.findViewById(R.id.cbTaskCheckBox)
+    }
+
+    fun refreshData(newTasks: List<TaskModel>) {
+        tasks = newTasks
+        notifyDataSetChanged()
     }
 }
