@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import androidx.core.database.sqlite.transaction
+import com.example.timeapp.db.ToDoContract.ToDoColumns.COLUMN_CREATED_AT
 import com.example.timeapp.db.ToDoContract.ToDoColumns.COLUMN_ID
 import com.example.timeapp.db.ToDoContract.ToDoColumns.COLUMN_IS_CHECKED
 import com.example.timeapp.db.ToDoContract.ToDoColumns.COLUMN_TITLE
@@ -16,6 +17,7 @@ import com.example.timeapp.db.ToDoContract.ToDoEntry.SQL_DELETE_ENTRIES
 import com.example.timeapp.db.ToDoContract.ToDoEntry.SQL_SELECT_ALL
 import com.example.timeapp.db.ToDoContract.ToDoEntry.TABLE_NAME
 import com.example.timeapp.model.TaskModel
+import java.util.Date
 
 class SQLiteManager(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION
 ) {
@@ -37,6 +39,7 @@ class SQLiteManager(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, 
         val values = ContentValues()
         values.put("title", taskTitle)
         values.put("isChecked", 0)
+        values.put("createdAt", System.currentTimeMillis())
 
         val db = writableDatabase
         db.transaction {
@@ -53,13 +56,15 @@ class SQLiteManager(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, 
         val idColumnIndex = cursor.getColumnIndex(COLUMN_ID)
         val titleColumnIndex = cursor.getColumnIndex(COLUMN_TITLE)
         val isCheckedColumnIndex = cursor.getColumnIndex(COLUMN_IS_CHECKED)
+        val createdAtColumnIndex = cursor.getColumnIndex(COLUMN_CREATED_AT)
 
         while (cursor.moveToNext()) {
             val id: Int = cursor.getInt(idColumnIndex)
             val title: String = cursor.getString(titleColumnIndex)
             val isChecked: Boolean = cursor.getInt(isCheckedColumnIndex) != 0
+            val createdAt: Date = Date(cursor.getLong(createdAtColumnIndex))
 
-            tasks.add(TaskModel(id, title, isChecked))
+            tasks.add(TaskModel(id, title, isChecked, createdAt))
         }
         cursor.close()
 
@@ -76,4 +81,5 @@ class SQLiteManager(context: Context): SQLiteOpenHelper(context, DATABASE_NAME, 
 
         db.update(TABLE_NAME, values, whereClause, whereArgs)
     }
+
 }

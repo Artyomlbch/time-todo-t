@@ -11,6 +11,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.timeapp.db.SQLiteManager
 import com.example.timeapp.viewadapter.TaskViewAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -57,6 +58,13 @@ class MainActivity : AppCompatActivity() {
                     bottomSheetDialog.dismiss()
                 }
             }
+
+        }
+
+        val refreshLayout: SwipeRefreshLayout = findViewById(R.id.srlRefreshTasks)
+        refreshLayout.setOnRefreshListener {
+            refreshTaskList()
+            refreshLayout.isRefreshing = false
         }
 
         db = SQLiteManager(this@MainActivity)
@@ -71,9 +79,12 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    override fun onResume() {
-        super.onResume()
+    private fun refreshTaskList() {
         taskViewAdapter.refreshData(db.getAllTasks())
     }
+
+//    override fun onResume() {
+//        super.onResume()
+//    }
 
 }
